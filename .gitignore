@@ -1,0 +1,8 @@
+.gradle
+build
+out
+*.json
+bin
+.project
+.idea
+*.swp
