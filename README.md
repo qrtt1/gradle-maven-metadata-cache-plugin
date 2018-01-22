@@ -5,7 +5,11 @@ A gradle plugin act as a maven proxy that can cache the metadata for artifacts. 
 
 # How to use it
 
-I haven't publish this plugin if someone wants to verify it quickly can clone this repository into `buildSrc` directory.
+I haven't publish this plugin if someone wants to verify it quickly can clone this repository into `buildSrc` directory. Apply plugin:
+
+```groovy
+apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+```
 
 # How does it work ?
 
