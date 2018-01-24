@@ -6,3 +6,4 @@ bin
 .project
 .idea
 *.swp
+*.iml

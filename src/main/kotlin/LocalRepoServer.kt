@@ -13,13 +13,14 @@ import java.io.File
 import java.io.FileWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 data class RepoistoryInformation(val name: String, val url: String)
 
 fun asCacheName(target: String): String {
-    return DigestUtils.sha256Hex(target!!)
+    return DigestUtils.sha256Hex(target)
 }
 
 data class Entry(val target: String, val url: String, val sha1: String,
@@ -128,8 +129,8 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                         return
                     }
                 }
-                logger.info("get target: $target => ${Cache.getUrl(target!!)}")
-                val location = URL(Cache.getUrl(target!!)).toString()
+                logger.info("get target: $target => ${Cache.getUrl(target)}")
+                val location = URL(Cache.getUrl(target)).toString()
                 if (location.endsWith("sha1")) {
                     logger.info("resolve sha1" + location.substringBeforeLast("sha1"))
                 }
@@ -145,13 +146,14 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
     private fun doHead(target: String, baseRequest: Request, response: HttpServletResponse): Boolean {
 
         if (Cache.get(target) != null) {
-            Cache.get(target)!!.forEach {
-                val header = it.key
-                val value = it.value
-                if (header != null) {
-                    response.setHeader(header, value)
-                }
-            }
+            Cache.get(target)!!
+                    .filter {
+                        // when header is represent for a status line, it will be null
+                        Optional.ofNullable(it.key).isPresent
+                    }
+                    .forEach {
+                        response.setHeader(it.key, it.value)
+                    }
             logger.info("found at cache[$target]")
             baseRequest.isHandled = true
             return true
@@ -165,6 +167,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
             }
         }
         // TODO when sources.jar not found, would we do anything ?
+        logger.warn("cannot find the file for $target")
         return false
     }
 
@@ -184,11 +187,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
         response.status = 200
         Cache.add(target, httpConnection)
         Cache.get(target)!!.forEach {
-            val header = it.key
-            val value = it.value
-            if (header != null) {
-                response.setHeader(header, value)
-            }
+            response.setHeader(it.key, it.value)
         }
         baseRequest.isHandled = true
         return true
