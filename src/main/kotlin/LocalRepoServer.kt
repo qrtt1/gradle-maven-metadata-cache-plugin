@@ -55,6 +55,7 @@ object Cache {
         var sha1Url = URL(url + ".sha1")
         val httpConnection = (sha1Url.openConnection() as HttpURLConnection)
         httpConnection.instanceFollowRedirects = true
+        MavenProxy.configureRealm(httpConnection)
         if (httpConnection.responseCode != 200) {
             throw IllegalStateException("Cannot get the sha1 from $sha1Url")
         }
@@ -82,18 +83,19 @@ object Cache {
                 connection.url.toString(),
                 sha1(connection.url.toString()),
                 headers)
-        FileWriter(toFile(".${asCacheName(target)}.json")).use {
+        val file = toFile(".${asCacheName(target)}.json")
+        FileWriter(file).use {
             it.write(gson.toJson(entry))
         }
-        logger.info("create cache at ${File(".${asCacheName(target)}.json").absolutePath}")
+        logger.info("create cache at $file")
     }
 
     private fun load(target: String): Entry? {
-        logger.info("load cache at ${File(".${asCacheName(target)}.json").absolutePath}")
         val file = toFile(".${asCacheName(target)}.json")
         if (!file.exists()) {
             return null
         }
+        logger.info("load cache from $file")
         val content = FileUtils.readFileToString(file, "utf-8")
         return gson.fromJson<Entry>(content, Entry::class.java)
     }
@@ -135,6 +137,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                     logger.info("resolve sha1" + location.substringBeforeLast("sha1"))
                 }
                 logger.info("redirect to $location")
+                MavenProxy.configureRealm(location, response!!)
                 response!!.sendRedirect(location)
             }
             else -> {
@@ -176,6 +179,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
         val httpConnection = (url.openConnection() as HttpURLConnection)
         httpConnection.instanceFollowRedirects = true
         httpConnection.requestMethod = "HEAD"
+        MavenProxy.configureRealm(httpConnection)
         baseRequest.headerNames!!.asSequence().forEach { header ->
             httpConnection.setRequestProperty(header, baseRequest.getHeader(header))
         }
