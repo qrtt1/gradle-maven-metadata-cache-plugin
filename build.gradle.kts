@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.tasks.bundling.Jar
 
 group = "org.qrtt1"
-version = "1.0-SNAPSHOT"
+version = "0.1"
 
 buildscript {
     var kotlin_version: String by extra
@@ -20,6 +21,7 @@ buildscript {
 apply {
     plugin("java")
     plugin("kotlin")
+    from("maven.gradle")
 }
 
 val kotlin_version: String by extra
@@ -41,7 +43,7 @@ dependencies {
 configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
+
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
-

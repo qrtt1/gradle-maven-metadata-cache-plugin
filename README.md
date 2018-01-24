@@ -11,6 +11,35 @@ I haven't publish this plugin if someone wants to verify it quickly can clone th
 apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
 ```
 
+Another way to get the built plugin is publishing the plugin at local maven repo:
+
+```
+./gradlew uploadArchives
+```
+
+Finally, you got a maven repo:
+
+```
+qty:maven.cache qrtt1$ tree build/maven-repo/
+build/maven-repo/
+└── org
+    └── qrtt1
+        └── maven.cache
+            ├── 0.1
+            │   ├── maven.cache-0.1.jar
+            │   ├── maven.cache-0.1.jar.md5
+            │   ├── maven.cache-0.1.jar.sha1
+            │   ├── maven.cache-0.1.pom
+            │   ├── maven.cache-0.1.pom.md5
+            │   └── maven.cache-0.1.pom.sha1
+            ├── maven-metadata.xml
+            ├── maven-metadata.xml.md5
+            └── maven-metadata.xml.sha1
+```
+
+
+
+
 # How does it work ?
 
 1. during gradle task graph creation, this pluing will scan all `repositories` and replace any `http[s]` protocol to a local proxy

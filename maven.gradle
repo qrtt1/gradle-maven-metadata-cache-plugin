@@ -1,0 +1,15 @@
+apply plugin: 'maven'
+
+clean {
+    doLast {delete fileTree("$buildDir/maven-repo")}
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file://./$buildDir/maven-repo") {
+            }
+        }
+    }
+    uploadArchives.dependsOn clean
+}
