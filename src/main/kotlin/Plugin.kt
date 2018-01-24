@@ -15,20 +15,45 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import java.util.*
 
-val logger = LoggerFactory.getLogger("maven-metadata-cache-plugin")!!
+val PLUGIN_NAME = "maven-metadata-cache-plugin"
+val logger = LoggerFactory.getLogger(PLUGIN_NAME)!!
 
-object BuildResult : BuildAdapter() {
+object BuildResultListener : BuildAdapter() {
     override fun buildFinished(result: BuildResult?) {
-        logger.info("stop server[${ServerInstance.server}]")
-        ServerInstance.server.stop()
+        MavenProxy.stop()
     }
 }
 
-val port = 10000 + Random().nextInt(1000)
+class MavenProxy {
 
-object ServerInstance {
-    val repos: Set<RepoistoryInformation> = HashSet()
-    val server = Server(port)
+    companion object {
+
+        private val port = 10000 + Random().nextInt(1000)
+        private var server: Server;
+
+        init {
+            server = Server(port)
+        }
+
+        fun start(repos: Set<RepoistoryInformation>) {
+            server.handler = GlobalHandler(repos)
+            server.start()
+            logger.info("start local-repo-server ${endpoint()}")
+        }
+
+        fun stop() {
+            logger.info("stop server[$server]")
+            server.stop()
+        }
+
+        fun isStarted(): Boolean {
+            return server.isStarted
+        }
+
+        fun endpoint(): URI {
+            return URI("http://127.0.0.1:$port")
+        }
+    }
 }
 
 
@@ -39,7 +64,7 @@ class MavenCacheRuleSource : RuleSource() {
 
         // when gradle process is kept with daemon
         // we should skip re-patch the project
-        if (ServerInstance.server.isStarted) {
+        if (MavenProxy.isStarted()) {
             return
         }
 
@@ -63,18 +88,16 @@ class MavenCacheRuleSource : RuleSource() {
                 addAll(keep)
                 maven {
                     with(it as MavenArtifactRepository) {
-                        name = "local-maven-repo"
-                        url = URI("http://127.0.0.1:$port")
+                        name = PLUGIN_NAME
+                        url = MavenProxy.endpoint()
                     }
                 }
             }
         }
 
         logger.info("managed repos: $repos")
-        ServerInstance.server.handler = GlobalHandler(repos)
-        ServerInstance.server.start()
-        logger.info("start local-repo-server at port: $port [${ServerInstance.server}]")
+        MavenProxy.start(repos)
         val gradle = projects.first().gradle
-        gradle.addBuildListener(BuildResult)
+        gradle.addBuildListener(BuildResultListener)
     }
 }
