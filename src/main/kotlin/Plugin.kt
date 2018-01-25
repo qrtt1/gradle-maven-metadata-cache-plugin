@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.*
-import javax.servlet.http.HttpServletResponse
 
 val PLUGIN_NAME = "maven-metadata-cache-plugin"
 val logger = LoggerFactory.getLogger(PLUGIN_NAME)!!
@@ -29,14 +28,24 @@ object BuildResultListener : BuildAdapter() {
 
 class MavenProxy {
 
+
     companion object {
 
-        private val port = 10000 + Random().nextInt(1000)
+        private var port = 10000 + Random().nextInt(1000)
         private var server: Server
         private val realms: MutableMap<String, String> = mutableMapOf()
 
         init {
             server = Server(port)
+        }
+
+        fun changePort(port: Int) {
+            if (server.isStarted) {
+                throw IllegalStateException("cannot change port for a started server")
+            }
+            this.port = port
+            server = Server(port)
+
         }
 
         fun start(repos: Set<RepoistoryInformation>) {
@@ -79,13 +88,15 @@ class MavenProxy {
             }
         }
 
-        fun configureRealm(location: String, response: HttpServletResponse) {
+        fun isAuthorizationRequired(location: String): Boolean {
             realms.forEach {
                 if (it.key in location) {
-                    response.setHeader("Authorization", it.value)
+                    return true
                 }
             }
+            return false
         }
+
     }
 }
 
