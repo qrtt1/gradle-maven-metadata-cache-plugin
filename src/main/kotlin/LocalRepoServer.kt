@@ -132,13 +132,31 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                     }
                 }
                 logger.info("get target: $target => ${Cache.getUrl(target)}")
-                val location = URL(Cache.getUrl(target)).toString()
+                var resolvedUrl = Cache.getUrl(target)
+                if (resolvedUrl == null) {
+                    probeFile(target, baseRequest!!)
+                    resolvedUrl = Cache.getUrl(target)
+                    logger.warn("probe-file[$target] before get => $resolvedUrl")
+                }
+                val location = URL(resolvedUrl).toString()
                 if (location.endsWith("sha1")) {
                     logger.info("resolve sha1" + location.substringBeforeLast("sha1"))
                 }
                 logger.info("redirect to $location")
-                MavenProxy.configureRealm(location, response!!)
-                response!!.sendRedirect(location)
+                if (MavenProxy.isAuthorizationRequired(location)) {
+                    val httpUrlConnection = URL(location).openConnection() as HttpURLConnection
+                    MavenProxy.configureRealm(httpUrlConnection)
+                    if (httpUrlConnection.responseCode == 200) {
+                        response!!.setContentLengthLong(httpUrlConnection.contentLengthLong)
+                        response!!.outputStream.use {
+                            IOUtils.copy(httpUrlConnection.inputStream, it)
+                        }
+                        return
+                    }
+
+                } else {
+                    response!!.sendRedirect(location)
+                }
             }
             else -> {
                 throw IllegalStateException("maven-proxy only accepts HEAD or GET request")
@@ -162,38 +180,47 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
             return true
         }
 
-        repos.forEach {
-            val baseUrl = URL(it.url)
-            val url = "$baseUrl$target"
-            if (doHeadForEachRepository(target, URL(url), baseRequest, response)) {
-                return true
+        if (probeFile(target, baseRequest)) {
+            Cache.get(target)!!.forEach {
+                response.setHeader(it.key, it.value)
             }
+            baseRequest.isHandled = true
+            return true
         }
+
         // TODO when sources.jar not found, would we do anything ?
         logger.warn("cannot find the file for $target")
         return false
     }
 
-    private fun doHeadForEachRepository(target: String, url: URL, baseRequest: Request, response: HttpServletResponse): Boolean {
-        logger.info("check url $url")
-        val httpConnection = (url.openConnection() as HttpURLConnection)
-        httpConnection.instanceFollowRedirects = true
-        httpConnection.requestMethod = "HEAD"
-        MavenProxy.configureRealm(httpConnection)
-        baseRequest.headerNames!!.asSequence().forEach { header ->
-            httpConnection.setRequestProperty(header, baseRequest.getHeader(header))
+
+    private fun probeFile(target: String, baseRequest: Request): Boolean {
+
+        fun hasFile(target: String, url: URL): Boolean {
+            logger.info("check url $url")
+            val httpConnection = (url.openConnection() as HttpURLConnection)
+            httpConnection.instanceFollowRedirects = true
+            httpConnection.requestMethod = "HEAD"
+            MavenProxy.configureRealm(httpConnection)
+            baseRequest.headerNames!!.asSequence().forEach { header ->
+                httpConnection.setRequestProperty(header, baseRequest.getHeader(header))
+            }
+
+            if (httpConnection.responseCode != 200) {
+                return false
+            }
+
+            Cache.add(target, httpConnection)
+            return true
         }
 
-        if (httpConnection.responseCode != 200) {
-            return false
+        repos.forEach {
+            if (hasFile(target, URL("${URL(it.url)}$target"))) {
+                return true
+            }
         }
 
-        response.status = 200
-        Cache.add(target, httpConnection)
-        Cache.get(target)!!.forEach {
-            response.setHeader(it.key, it.value)
-        }
-        baseRequest.isHandled = true
-        return true
+        return false
     }
+
 }
