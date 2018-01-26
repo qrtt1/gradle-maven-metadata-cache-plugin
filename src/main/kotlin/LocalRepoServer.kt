@@ -84,6 +84,7 @@ object Cache {
                 sha1(connection.url.toString()),
                 headers)
         val file = toFile(".${asCacheName(target)}.json")
+        file.parentFile.mkdirs()
         FileWriter(file).use {
             it.write(gson.toJson(entry))
         }
@@ -110,17 +111,18 @@ object Cache {
 
 class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
 
-    override fun handle(target: String?, baseRequest: Request?, request: HttpServletRequest?,
+    override fun handle(originTarget: String?, baseRequest: Request?, request: HttpServletRequest?,
                         response: HttpServletResponse?) {
 
+        val target = originTarget!!.substring(1)
         val method = request?.method!!
         when (method) {
             "HEAD" -> {
                 logger.info("head target: $target")
-                doHead(target!!, baseRequest!!, response!!)
+                doHead(target, baseRequest!!, response!!)
             }
             "GET" -> {
-                if (target!!.endsWith(".sha1")) {
+                if (target.endsWith(".sha1")) {
                     val sha1 = Cache.getSha1(target)
                     logger.info("response sha1 directly: $sha1")
                     if (sha1 != null) {
@@ -148,7 +150,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                     MavenProxy.configureRealm(httpUrlConnection)
                     if (httpUrlConnection.responseCode == 200) {
                         response!!.setContentLengthLong(httpUrlConnection.contentLengthLong)
-                        response!!.outputStream.use {
+                        response.outputStream.use {
                             IOUtils.copy(httpUrlConnection.inputStream, it)
                         }
                         return
@@ -175,7 +177,7 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                     .forEach {
                         response.setHeader(it.key, it.value)
                     }
-            logger.info("found at cache[$target]")
+            logger.info("found cache[$target]")
             baseRequest.isHandled = true
             return true
         }
@@ -206,11 +208,17 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                 httpConnection.setRequestProperty(header, baseRequest.getHeader(header))
             }
 
+            logger.info("resolve file[$target](status: ${httpConnection.responseCode}) from [$url]")
             if (httpConnection.responseCode != 200) {
                 return false
             }
 
-            Cache.add(target, httpConnection)
+            try {
+                Cache.add(target, httpConnection)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw  e
+            }
             return true
         }
 
