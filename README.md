@@ -37,6 +37,21 @@ build/maven-repo/
             └── maven-metadata.xml.sha1
 ```
 
+And configure it in the `buildscript`:
+
+```
+buildscript {
+    repositories {
+        maven {
+            url = '/path/to/local/maven-repo'
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'org.qrtt1', name: 'maven.cache', version: '0.1'
+    }
+}
+```
 
 
 
@@ -88,7 +103,7 @@ Each cache keeps the URI and URL with its sha1 and original server response head
 
 # Known Issues
 
-A.k.a known issues means something we know it but won't fix it (it can't be fixed).
+Known issues means something we know it but won't fix it (it can't be fixed).
 
 ## Plugin has no chance to resolve by proxy when the project has been resolved
 
