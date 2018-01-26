@@ -35,8 +35,10 @@ dependencies {
     compile("com.google.code.gson:gson:2.8.2")
     compile("org.eclipse.jetty:jetty-server:9.4.8.v20171121")
     compile("commons-io:commons-io:2.6")
-    compile(gradleApi())
     compile(kotlinModule("stdlib-jdk8", kotlin_version))
+
+    compile(gradleApi())
+    testCompile(gradleTestKit())
     testCompile("junit", "junit", "4.12")
 }
 

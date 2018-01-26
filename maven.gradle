@@ -1,15 +1,13 @@
 apply plugin: 'maven'
 
-clean {
-    doLast {delete fileTree("$buildDir/maven-repo")}
-}
-
 uploadArchives {
+    doFirst {
+        delete fileTree("$buildDir/maven-repo")
+    }
     repositories {
         mavenDeployer {
             repository(url: "file://./$buildDir/maven-repo") {
             }
         }
     }
-    uploadArchives.dependsOn clean
 }
