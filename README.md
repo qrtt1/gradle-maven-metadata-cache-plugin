@@ -85,3 +85,23 @@ Each cache keeps the URI and URL with its sha1 and original server response head
   }
 }
 ```
+
+# Known Issues
+
+A.k.a known issues means something we know it but won't fix it (it can't be fixed).
+
+## Plugin has no chance to resolve by proxy when the project has been resolved
+
+Consider this situation:
+
+```groovy
+configurations.findAll() {
+  println it
+}
+
+apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+```
+
+The script try to resolve dependencis forcely, and it might happen before our plugin applied.
+That causes our plugin never be asked dependencies from Gradle's depdendency-manager.
+
