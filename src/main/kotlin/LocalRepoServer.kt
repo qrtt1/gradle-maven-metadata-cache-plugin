@@ -23,7 +23,10 @@ fun asCacheName(target: String): String {
     return DigestUtils.sha256Hex(target)
 }
 
-data class Entry(val target: String, val url: String, val sha1: String,
+data class Entry(val target: String,
+                 val url: String,
+                 val sha1: String,
+                 val found: Boolean,
                  val headers: Map<String, String>)
 
 object Cache {
@@ -40,7 +43,11 @@ object Cache {
     }
 
     fun getUrl(target: String): String? {
-        return load(target)?.url
+        val url = load(target)?.url
+        if (url != null || url != "") {
+            return url
+        }
+        return null
     }
 
     fun getSha1(target: String): String? {
@@ -82,6 +89,7 @@ object Cache {
         val entry = Entry(target,
                 connection.url.toString(),
                 sha1(connection.url.toString()),
+                true,
                 headers)
         val file = toFile(".${asCacheName(target)}.json")
         file.parentFile.mkdirs()
@@ -89,6 +97,19 @@ object Cache {
             it.write(gson.toJson(entry))
         }
         logger.info("create cache at $file")
+    }
+
+    fun markLost(target: String) {
+        val file = toFile(".${asCacheName(target)}.json")
+        if (file.exists()) {
+            return
+        }
+
+        val entry = Entry(target, "", "", false, mapOf())
+        file.parentFile.mkdirs()
+        FileWriter(file).use {
+            it.write(gson.toJson(entry))
+        }
     }
 
     private fun load(target: String): Entry? {
@@ -101,7 +122,11 @@ object Cache {
         return gson.fromJson<Entry>(content, Entry::class.java)
     }
 
-    fun get(target: String): Map<String, String>? {
+    fun get(target: String): Entry? {
+        return load(target)
+    }
+
+    fun getHeader(target: String): Map<String, String>? {
         return load(target)?.headers
     }
 
@@ -134,9 +159,15 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
                     }
                 }
                 logger.info("get target: $target => ${Cache.getUrl(target)}")
-                var resolvedUrl = Cache.getUrl(target)
-                if (resolvedUrl == null) {
+                val entry = Cache.get(target)
+                var resolvedUrl = entry?.url
+                if (entry == null) {
                     probeFile(target, baseRequest!!)
+                    if (!Cache.get(target)!!.found) {
+                        baseRequest!!.isHandled = true
+                        response!!.status = 404
+                        return
+                    }
                     resolvedUrl = Cache.getUrl(target)
                     logger.warn("probe-file[$target] before get => $resolvedUrl")
                 }
@@ -168,8 +199,9 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
 
     private fun doHead(target: String, baseRequest: Request, response: HttpServletResponse): Boolean {
 
-        if (Cache.get(target) != null) {
-            Cache.get(target)!!
+        val entry: Entry? = Cache.get(target)
+        if (entry != null && entry.found) {
+            Cache.getHeader(target)!!
                     .filter {
                         // when header is represent for a status line, it will be null
                         Optional.ofNullable(it.key).isPresent
@@ -183,15 +215,13 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
         }
 
         if (probeFile(target, baseRequest)) {
-            Cache.get(target)!!.forEach {
+            Cache.getHeader(target)!!.forEach {
                 response.setHeader(it.key, it.value)
             }
             baseRequest.isHandled = true
             return true
         }
 
-        // TODO when sources.jar not found, would we do anything ?
-        logger.warn("cannot find the file for $target")
         return false
     }
 
@@ -235,6 +265,11 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
             }
         }
 
+        if (target.endsWith("-sources.jar")) {
+            Cache.markLost(target)
+        } else {
+            logger.warn("cannot find the file for $target")
+        }
         return false
     }
 
