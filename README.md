@@ -19,6 +19,8 @@ buildscript {
         classpath 'com.github.qrtt1:gradle-maven-metadata-cache-plugin:v0.1-alpha.3'
     }
 }
+
+apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
 ```
 
 ### For latest build
