@@ -5,11 +5,15 @@ A gradle plugin act as a maven proxy that can cache the metadata for artifacts. 
 
 # How to use it
 
-I haven't publish this plugin if someone wants to verify it quickly can clone this repository into `buildSrc` directory. Apply plugin:
+## For development
+
+If someone wants to verify it quickly can clone this repository into `buildSrc` directory. Apply plugin:
 
 ```groovy
 apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
 ```
+
+## For latest build
 
 Another way to get the built plugin is publishing the plugin at local maven repo:
 
@@ -39,7 +43,7 @@ build/maven-repo/
 
 And configure it in the `buildscript`:
 
-```
+```groovy
 buildscript {
     repositories {
         maven {
@@ -53,7 +57,21 @@ buildscript {
 }
 ```
 
+## For regular use
 
+Our plugin is published to jitpack.io, you can install it in that way:
+
+```groovy
+buildscript {
+    repositories {
+        maven { url 'https://jitpack.io' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.qrtt1:gradle-maven-metadata-cache-plugin:v0.1-alpha.3'
+    }
+}
+```
 
 # How does it work ?
 
