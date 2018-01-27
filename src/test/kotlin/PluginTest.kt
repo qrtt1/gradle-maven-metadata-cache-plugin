@@ -53,6 +53,25 @@ class MavenCentralTest : GradlePluginTest() {
 
 }
 
+class JitpackTest : GradlePluginTest() {
+
+    @Test
+    override fun testProxyWithRepository() {
+        val result = testRepository("""
+            maven { url 'https://jitpack.io' }
+            mavenCentral()
+        """.trimIndent(),
+                "compile 'com.github.qrtt1:gradle-maven-metadata-cache-plugin:v0.1-alpha.2'")
+
+        assertNotNull(parseResolvingResult(result!!).filter {
+            it.status == 200 &&
+                    it.file == "com/github/qrtt1/gradle-maven-metadata-cache-plugin/v0.1-alpha.2/gradle-maven-metadata-cache-plugin-v0.1-alpha.2.jar"
+        }.singleOrNull())
+    }
+
+}
+
+
 data class Resolved(val file: String, val status: Int, val url: String)
 
 fun parseResolvingResult(input: String): List<Resolved> {

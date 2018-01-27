@@ -223,7 +223,14 @@ class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
         }
 
         repos.forEach {
-            if (hasFile(target, URL("${URL(it.url)}$target"))) {
+
+            // ensure the url of the repository is ending with '/'
+            var baseUrl = it.url
+            if (!baseUrl.endsWith("/")) {
+                baseUrl += "/"
+            }
+
+            if (hasFile(target, URL("$baseUrl$target"))) {
                 return true
             }
         }
