@@ -17,7 +17,7 @@ import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-data class RepoistoryInformation(val name: String, val url: String)
+data class RepositoryInformation(val name: String, val url: String)
 
 fun asCacheName(target: String): String {
     return DigestUtils.sha256Hex(target)
@@ -134,7 +134,7 @@ object Cache {
 }
 
 
-class GlobalHandler(val repos: Set<RepoistoryInformation>) : AbstractHandler() {
+class GlobalHandler(val repos: Set<RepositoryInformation>) : AbstractHandler() {
 
     override fun handle(originTarget: String?, baseRequest: Request?, request: HttpServletRequest?,
                         response: HttpServletResponse?) {

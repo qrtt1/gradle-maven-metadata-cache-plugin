@@ -48,7 +48,7 @@ class MavenProxy {
 
         }
 
-        fun start(repos: Set<RepoistoryInformation>) {
+        fun start(repos: Set<RepositoryInformation>) {
             server.handler = GlobalHandler(repos)
             server.start()
             logger.info("start local-repo-server ${endpoint()}")
@@ -111,7 +111,7 @@ class MavenCacheRuleSource : RuleSource() {
             return
         }
 
-        val repos = HashSet<RepoistoryInformation>()
+        val repos = HashSet<RepositoryInformation>()
         val projects: Set<Project> = tasks["projects"]!!.project!!.allprojects
 
         projects.forEach { project ->
@@ -120,7 +120,7 @@ class MavenCacheRuleSource : RuleSource() {
             project.repositories.forEach {
                 val r = it as DefaultMavenArtifactRepository
                 if (r.url!!.scheme!!.contains("^http".toRegex())) {
-                    repos.add(RepoistoryInformation(r.name!!, r.url!!.toString()))
+                    repos.add(RepositoryInformation(r.name!!, r.url!!.toString()))
                     MavenProxy.addHttpBasicRealm(r.url.toString(), r.credentials)
                 } else {
                     keep.add(it)
