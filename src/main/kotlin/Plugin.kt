@@ -33,8 +33,10 @@ class MavenProxy {
     companion object {
 
         private var port = 10000 + Random().nextInt(1000)
+        public var httpTimeOut = 0
         private var server: Server
         private val realms: MutableMap<String, String> = mutableMapOf()
+
 
         init {
             server = Server(port)
@@ -81,6 +83,7 @@ class MavenProxy {
             }
         }
 
+
         fun configureRealm(httpURLConnection: HttpURLConnection) {
             realms.forEach {
                 if (it.key in httpURLConnection.url.toString()) {
@@ -114,6 +117,8 @@ class MavenCacheRuleSource : RuleSource() {
 
         val repos = HashSet<RepositoryInformation>()
         val projects: Set<Project> = tasks["projects"]!!.project!!.allprojects
+        val ext = projects.first().rootProject.extensions.getByType(MavenCacheExtension::class.java)
+        MavenProxy.httpTimeOut = ext.timeout
 
         projects.forEach { project ->
             logger.info("patch project: ${project.name}")
@@ -155,6 +160,6 @@ open class MavenCachePlugin : Plugin<Project> {
     override fun apply(project: Project?) {
         val p = project!!
         p.pluginManager.apply(MavenCacheRuleSource::class.java)
-        p.extensions.create("mavenCache", MavenCacheExtension::class.java)
+        p.extensions.create("mavenMetadataCache", MavenCacheExtension::class.java)
     }
 }

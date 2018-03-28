@@ -62,6 +62,9 @@ object Cache {
         var sha1Url = URL(url + ".sha1")
         val httpConnection = (sha1Url.openConnection() as HttpURLConnection)
         httpConnection.instanceFollowRedirects = true
+        httpConnection.connectTimeout = MavenProxy.httpTimeOut
+        httpConnection.readTimeout = MavenProxy.httpTimeOut
+
         MavenProxy.configureRealm(httpConnection)
         if (httpConnection.responseCode != 200) {
             throw IllegalStateException("Cannot get the sha1 from $sha1Url")
@@ -178,6 +181,8 @@ class GlobalHandler(val repos: Set<RepositoryInformation>) : AbstractHandler() {
                 logger.info("redirect to $location")
                 if (MavenProxy.isAuthorizationRequired(location)) {
                     val httpUrlConnection = URL(location).openConnection() as HttpURLConnection
+                    httpUrlConnection.connectTimeout = MavenProxy.httpTimeOut
+                    httpUrlConnection.readTimeout = MavenProxy.httpTimeOut
                     MavenProxy.configureRealm(httpUrlConnection)
                     if (httpUrlConnection.responseCode == 200) {
                         response!!.setContentLengthLong(httpUrlConnection.contentLengthLong)
@@ -233,6 +238,8 @@ class GlobalHandler(val repos: Set<RepositoryInformation>) : AbstractHandler() {
             val httpConnection = (url.openConnection() as HttpURLConnection)
             httpConnection.instanceFollowRedirects = true
             httpConnection.requestMethod = "HEAD"
+            httpConnection.connectTimeout = MavenProxy.httpTimeOut
+            httpConnection.readTimeout = MavenProxy.httpTimeOut
             MavenProxy.configureRealm(httpConnection)
             baseRequest.headerNames!!.asSequence().forEach { header ->
                 httpConnection.setRequestProperty(header, baseRequest.getHeader(header))

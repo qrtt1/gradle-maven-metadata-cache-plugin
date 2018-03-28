@@ -133,6 +133,10 @@ abstract class GradlePluginTest {
                  $dependencyNotation
             }
 
+            mavenMetadataCache {
+                timeout = 9527
+            }
+
             task sayMyName {
                 doLast {
                     // force resolving libraries
