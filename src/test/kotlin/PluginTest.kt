@@ -123,7 +123,7 @@ abstract class GradlePluginTest {
             }
 
             apply plugin: 'java'
-            apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+            apply plugin: 'org.qrtt1.gradle.maven-cache'
 
             repositories {
                 $repositoryDefition
@@ -131,6 +131,10 @@ abstract class GradlePluginTest {
 
             dependencies {
                  $dependencyNotation
+            }
+
+            mavenMetadataCache {
+                timeout = 9527
             }
 
             task sayMyName {

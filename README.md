@@ -20,7 +20,15 @@ buildscript {
     }
 }
 
-apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+apply plugin: 'org.qrtt1.gradle.maven-cache'
+```
+
+And it is possible to configure http timeou with `mavenMetadataCache` extension:
+
+```groovy
+mavenMetadataCache {
+    timeout = 9527
+}
 ```
 
 ### For latest build
@@ -66,7 +74,7 @@ buildscript {
     }
 }
 
-apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+apply plugin: 'org.qrtt1.gradle.maven-cache'
 ```
 
 ### For development
@@ -74,7 +82,7 @@ apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
 If someone wants to verify it quickly can clone this repository into `buildSrc` directory. Apply plugin:
 
 ```groovy
-apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+apply plugin: 'org.qrtt1.gradle.maven-cache'
 ```
 
 

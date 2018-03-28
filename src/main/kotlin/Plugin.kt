@@ -3,6 +3,7 @@ package org.qrtt1.gradle
 import org.eclipse.jetty.server.Server
 import org.gradle.BuildAdapter
 import org.gradle.BuildResult
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.ArtifactRepository
@@ -32,8 +33,10 @@ class MavenProxy {
     companion object {
 
         private var port = 10000 + Random().nextInt(1000)
+        public var httpTimeOut = 0
         private var server: Server
         private val realms: MutableMap<String, String> = mutableMapOf()
+
 
         init {
             server = Server(port)
@@ -80,6 +83,7 @@ class MavenProxy {
             }
         }
 
+
         fun configureRealm(httpURLConnection: HttpURLConnection) {
             realms.forEach {
                 if (it.key in httpURLConnection.url.toString()) {
@@ -113,6 +117,8 @@ class MavenCacheRuleSource : RuleSource() {
 
         val repos = HashSet<RepositoryInformation>()
         val projects: Set<Project> = tasks["projects"]!!.project!!.allprojects
+        val ext = projects.first().rootProject.extensions.getByType(MavenCacheExtension::class.java)
+        MavenProxy.httpTimeOut = ext.timeout
 
         projects.forEach { project ->
             logger.info("patch project: ${project.name}")
@@ -143,5 +149,17 @@ class MavenCacheRuleSource : RuleSource() {
         MavenProxy.start(repos)
         val gradle = projects.first().gradle
         gradle.addBuildListener(BuildResultListener)
+    }
+}
+
+open class MavenCacheExtension {
+    var timeout: Int = 0
+}
+
+open class MavenCachePlugin : Plugin<Project> {
+    override fun apply(project: Project?) {
+        val p = project!!
+        p.pluginManager.apply(MavenCacheRuleSource::class.java)
+        p.extensions.create("mavenMetadataCache", MavenCacheExtension::class.java)
     }
 }
