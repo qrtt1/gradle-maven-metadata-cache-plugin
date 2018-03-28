@@ -123,7 +123,7 @@ abstract class GradlePluginTest {
             }
 
             apply plugin: 'java'
-            apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+            apply plugin: 'org.qrtt1.gradle.maven-cache'
 
             repositories {
                 $repositoryDefition

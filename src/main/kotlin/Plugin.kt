@@ -3,6 +3,7 @@ package org.qrtt1.gradle
 import org.eclipse.jetty.server.Server
 import org.gradle.BuildAdapter
 import org.gradle.BuildResult
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.ArtifactRepository
@@ -143,5 +144,17 @@ class MavenCacheRuleSource : RuleSource() {
         MavenProxy.start(repos)
         val gradle = projects.first().gradle
         gradle.addBuildListener(BuildResultListener)
+    }
+}
+
+open class MavenCacheExtension {
+    var timeout: Int = 0
+}
+
+open class MavenCachePlugin : Plugin<Project> {
+    override fun apply(project: Project?) {
+        val p = project!!
+        p.pluginManager.apply(MavenCacheRuleSource::class.java)
+        p.extensions.create("mavenCache", MavenCacheExtension::class.java)
     }
 }
