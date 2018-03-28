@@ -31,7 +31,7 @@ mavenMetadataCache {
 }
 ```
 
-### For latest build
+### Build from source code
 
 Another way to get the built plugin is publishing the plugin at local maven repo:
 
@@ -145,7 +145,7 @@ configurations.findAll() {
   println it
 }
 
-apply plugin: org.qrtt1.gradle.MavenCacheRuleSource
+apply plugin: 'org.qrtt1.gradle.maven-cache'
 ```
 
 The script try to resolve dependencis forcely, and it might happen before our plugin applied.
